@@ -6,7 +6,7 @@ import pandas as pd
 
 
 
-def extract_unique_identifiers(xml_path, id_dir='identifiers'):
+def extract_unique_identifiers(xml_path, id_dir):
 
     os.makedirs(id_dir, exist_ok=True)
 
@@ -33,18 +33,22 @@ def extract_unique_identifiers(xml_path, id_dir='identifiers'):
             height = section_image.find("height")
             siLeft = section_image.find("x")
             siTop = section_image.find("y")
+            path = section_image.find("path")
+
+            print(structure_id.text, structure_id.text is not None);
             
             # Store the identifier and its associated fields
             unique_ids[identifier] = {
                 "resolution": float(resolution.text) if resolution is not None else None,
                 "sample": int(section_number.text) if section_number is not None else None,
-                "sub": str(specimen_id),
-                "structure_id": int(structure_id.text) if structure_id is not None else None,
-                "tier_count": int(tier_count.text) if tier_count is not None else None,
-                "width": int(width.text) if width is not None else None,
-                "height": int(height.text) if height is not None else None,
-                "siLeft": int(siLeft.text) if siLeft is not None else None,
-                "siTop": int(siTop.text) if siTop is not None else None
+                "sub": str(specimen_id).replace('sub-',''),
+                "structure_id": int(structure_id.text) if structure_id.text is not None else None,
+                "tier_count": int(tier_count.text) if tier_count.text is not None else None,
+                "width": int(width.text) if width.text is not None else None,
+                "height": int(height.text) if height.text is not None else None,
+                "siLeft": int(siLeft.text) if siLeft.text is not None else None,
+                "siTop": int(siTop.text) if siTop.text is not None else None,
+                "path": path.text if path is not None else None
             }
 
 
@@ -67,15 +71,34 @@ def extract_unique_identifiers(xml_path, id_dir='identifiers'):
     unique_ids_list = sorted(list(unique_ids))
     print("Unique Identifiers:", len(unique_ids_list))
 
-    return df
+    return csv_path
 
 
-# Load XML file
-xml_path = 'xml/sub-714645_48mo.xml'
-# Call the function to extract identifiers
-id_df_list = []
-for xml_path in glob.glob('xml/*.xml'):
-    id_df_list.append(extract_unique_identifiers(xml_path))
+def get_identifiers(xml_dir='/media/tfunck/external/dev-nhp-atlas/xml/', id_dir='/media/tfunck/external/dev-nhp-atlas/identifiers'):
 
-# Combine all DataFrames into one
-combined_df = pd.concat(id_df_list, ignore_index=True)
+    # List all XML files in the directory
+    xml_files = glob.glob(os.path.join(xml_dir, '*.xml'))
+
+    if not xml_files:
+        print("No XML files found in the specified directory.")
+        return
+
+    # Process each XML file
+    #for xml_file in xml_files:
+    #    extract_unique_identifiers(xml_file, id_dir=id_dir)
+
+    # Load XML files
+    # Call the function to extract identifiers
+    id_df_list = []
+    for xml_path in xml_files:
+        id_df_list.append(extract_unique_identifiers(xml_path, id_dir=id_dir))
+
+    # Combine all DataFrames into one
+    #combined_df = pd.concat(id_df_list, ignore_index=True)
+
+    # Save the combined DataFrame to a single CSV file
+    #combined_csv_path = '/media/tfunck/external/dev-nhp-atlas/identifiers/combined_identifiers.csv'
+    #combined_df.to_csv(combined_csv_path, index=False)
+    #print(f"Combined data saved to {combined_csv_path}")
+    
+    return id_df_list
